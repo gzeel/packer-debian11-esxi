@@ -1,0 +1,70 @@
+{
+    "variables": {
+        "vm_name": "debian-11.2.0-amd64",
+        "numvcpus": "1",
+        "memsize": "2048",
+        "disk_size": "40960",
+        "iso_url": "https://cdimage.debian.org/cdimage/release/11.2.0/amd64/iso-cd/debian-11.2.0-amd64-netinst.iso",
+        "iso_checksum": "45c9feabba213bdc6d72e7469de71ea5aeff73faea6bfb109ab5bad37c3b43bd",
+        "ssh_username" : "packer",
+        "ssh_password" : "packer",
+        "boot_wait": "5s",
+        "esxi_vmnetwork": "VM Network",
+        "esxi_user": "root" 
+      },
+      "builders": [
+        {
+          "type": "vmware-iso",
+          "format": "vmx",
+          "version": 19,
+          "boot_command": ["<esc>auto preseed/url=http://{{ user `host_ip` }}:{{ .HTTPPort }}/preseed.cfg<enter>"],
+          "boot_wait": "{{ user `boot_wait` }}",
+          "disk_size": "{{ user `disk_size` }}",
+          "disk_type_id": "thin",
+          "cpus": "{{ user `numvcpus` }}",
+          "memory": "{{ user `memsize` }}",
+          "guest_os_type": "debian10-64",
+          "headless": false,
+          "vnc_over_websocket": true,
+          "http_directory": "http",
+          "http_port_min": "8472",
+          "http_port_max": "8472",
+          "iso_checksum": "{{ user `iso_checksum` }}",
+          "iso_url": "{{ user `iso_url` }}",
+          "shutdown_command": "echo 'packer'|sudo -S shutdown -P now",
+          "ssh_password": "{{ user `ssh_password` }}",
+          "ssh_port": 22,
+          "ssh_username": "{{ user `ssh_username` }}",
+          "ssh_timeout": "30m",
+          "remote_type": "esx5",
+          "remote_host": "{{ user `esxi_remote_host` }}",
+          "remote_datastore": "{{ user `esxi_datastore` }}",
+          "remote_username": "{{ user `esxi_user` }}",
+          "remote_password": "{{user `esxi_password`}}",
+          "vm_name": "{{ user `vm_name` }}",
+          "vmx_data": {
+            "ethernet0.networkName": "{{ user `esxi_vmnetwork` }}"
+          }
+        }
+    ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "execute_command": "echo 'packer'|{{.Vars}} sudo -S -E bash '{{.Path}}'",
+        "inline": [
+          "apt -y update && apt -y upgrade",
+          "apt -y install python3-pip",
+          "pip3 --no-cache-dir install ansible"
+        ]
+      },
+      {
+        "type": "ansible-local",
+        "playbook_file": "scripts/setup.yml"
+      },
+      {
+        "type": "shell",
+        "execute_command": "echo 'packer'|{{.Vars}} sudo -S -E bash '{{.Path}}'",
+        "scripts": ["scripts/cleanup.sh"]
+      }
+    ]
+  }
