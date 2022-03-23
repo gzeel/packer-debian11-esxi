@@ -23,7 +23,8 @@
           "disk_type_id": "thin",
           "cpus": "{{ user `numvcpus` }}",
           "memory": "{{ user `memsize` }}",
-          "guest_os_type": "debian10-64",
+          "guest_os_type": "debian11-64",
+          "insecure_connection": true,
           "headless": false,
           "vnc_over_websocket": true,
           "http_directory": "http",
@@ -43,6 +44,8 @@
           "remote_password": "{{user `esxi_password`}}",
           "vm_name": "{{ user `vm_name` }}",
           "vmx_data": {
+            "cpuid.coresPerSocket": "1",
+            "ethernet0.pciSlotNumber": "32",
             "ethernet0.networkName": "{{ user `esxi_vmnetwork` }}"
           }
         }
@@ -64,7 +67,23 @@
       {
         "type": "shell",
         "execute_command": "echo 'packer'|{{.Vars}} sudo -S -E bash '{{.Path}}'",
-        "scripts": ["scripts/cleanup.sh"]
+        "scripts": ["scripts/networking.sh",
+                    "scripts/cleanup.sh"
+                   ]
       }
+    ],
+
+    "post-processors": [
+      [
+        {
+          "output": "builds/{{.Provider}}-ubuntu2110.box",
+          "type": "vagrant"
+        },
+        {
+          "type": "vagrant-cloud",
+          "box_tag": "{{user `boxname`}}",
+          "version": "{{user `version`}}"
+        }
+      ]
     ]
   }
