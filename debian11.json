@@ -62,7 +62,8 @@
       },
       {
         "type": "ansible-local",
-        "playbook_file": "scripts/setup.yml"
+        "playbook_file": "scripts/setup.yml",
+        "galaxy_file": "scripts/requirements.yml"
       },
       {
         "type": "shell",
@@ -76,7 +77,7 @@
     "post-processors": [
       [
         {
-          "output": "builds/{{.Provider}}-ubuntu2110.box",
+          "output": "builds/{{.Provider}}-debian11.box",
           "type": "vagrant"
         },
         {
